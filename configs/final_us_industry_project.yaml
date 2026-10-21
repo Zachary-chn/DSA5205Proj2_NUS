@@ -1,0 +1,53 @@
+project:
+  name: final_us_industry_project
+  random_seed: 5205
+
+paths:
+  raw_prices: data/raw/prices_daily_us_industry.csv
+  monthly_prices: data/processed/prices_monthly_us_industry.csv
+  model_table: data/processed/model_table_us_industry.csv
+  artifacts_dir: artifacts
+
+data:
+  source: yahoo_finance
+  client: yahoo_chart
+  download: true
+  tickers: [XLY, XLP, XLE, XLF, XLV, XLI, XLK, XLB, XLU, IBB, IYR, ITB, KBE, KRE, XHB, XME, XOP, XRT, SMH, IYT]
+  benchmark_tickers: [SPY]
+  start: "2007-01-01"
+  end: "2026-10-21"
+  price_field: adjusted_close
+  minimum_history_months: 24
+  minimum_assets_per_month: 18
+  minimum_ticker_coverage: 0.95
+
+features:
+  mapping: trend_rank_relative_strength_long_risk
+  current_trend_days: 21
+  relative_strength_window_months: 6
+  risk_long_days: 126
+  winsorize_lower: 0.01
+  winsorize_upper: 0.99
+
+split:
+  train_end: "2014-12-31"
+  validation_end: "2018-12-31"
+  test_end: "2025-12-31"
+
+model:
+  type: ridge
+  target_column: target_return_1m
+  positive_coefficients: false
+  alpha_grid: [0.01, 0.1, 1.0, 10.0, 100.0]
+  selection_metric: monthly_spearman_ic
+
+strategy:
+  top_k: 5
+  require_positive_prediction: true
+  weighting: equal
+  transaction_cost_bps: 10.0
+  cash_return_annual: 0.0
+
+evaluation:
+  annualization_factor: 12
+  benchmark_ticker: SPY

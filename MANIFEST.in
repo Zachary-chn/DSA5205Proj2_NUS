@@ -1,0 +1,7 @@
+prune .venv
+prune artifacts
+prune data/raw
+prune data/processed
+prune .tmp_pdf_review
+global-exclude __pycache__ *.py[cod]
+
