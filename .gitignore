@@ -11,5 +11,7 @@ data/processed/*.csv
 !data/processed/model_table_us_industry.csv
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/20261024T155915Z_final_us_industry_project/
+!artifacts/20261024T155915Z_final_us_industry_project/**
 !data/raw/.gitkeep
 !data/processed/.gitkeep

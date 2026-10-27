@@ -1,0 +1,5 @@
+split,rows,assets,first_signal,last_signal
+outside,200,20,2026-01-30,2026-10-20
+test,1680,20,2019-01-31,2025-12-31
+train,1800,20,2007-07-31,2014-12-31
+validation,960,20,2015-01-30,2018-12-31
