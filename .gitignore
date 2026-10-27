@@ -7,6 +7,8 @@ __pycache__/
 data/raw/*.csv
 !data/raw/prices_daily_us_industry.csv
 data/processed/*.csv
+!data/processed/prices_monthly_us_industry.csv
+!data/processed/model_table_us_industry.csv
 artifacts/*
 !artifacts/.gitkeep
 !data/raw/.gitkeep
