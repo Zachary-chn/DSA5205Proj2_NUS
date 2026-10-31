@@ -37,6 +37,8 @@ The current time design is:
 
 The model must learn from earlier observations and predict later ones, so do not randomly shuffle the dates into new splits.
 
+Keep signal-date splits unchanged, but use only labels already known at each step: candidate fitting uses train rows with `return_date <= first validation signal`; selection and final fitting use validation or train/validation rows with `return_date <= first test signal`. Current eligible counts are 1,780 rows (89 months), 940 rows (47 months), and 2,740 rows (137 months). December 2014 is excluded from candidate fitting but re-enters the final fit; December 2018 is excluded from selection and the final fit. Do not delete rows from A's CSV.
+
 ## What you must deliver
 
 The model stage creates:
@@ -88,13 +90,13 @@ Because the features have different units, the code uses `StandardScaler`. For e
 
 ## Step 3: Select alpha with the validation period
 
-For each alpha, fit the model on the training rows and generate validation predictions for the 20 ETFs each month. Calculate the monthly Spearman correlation between predicted rankings and realised return rankings, then average the correlations across validation months.
+For each alpha, fit the model on the training rows and generate validation predictions for the 20 ETFs each month. Calculate the monthly Spearman correlation between predicted rankings and realised return rankings, then average the correlations across validation months whose labels satisfy the availability rule above.
 
 The current selection method chooses the alpha with the highest average monthly Spearman IC. If none of the IC values can be calculated, use the lowest validation MSE. Save all five candidate results in `alpha_validation.csv`.
 
 ## Step 4: Generate predictions for Member C
 
-After selecting alpha, refit the scaler and Ridge model on training plus validation rows. Generate `predicted_return` for train, validation, and test rows and save them in `predictions.csv`.
+After selecting alpha, refit the scaler and Ridge model on train/validation rows with available labels and save `model.joblib`. Keep all train/validation/test rows in `predictions.csv`: train/validation predictions use the selected train-only model, while test predictions use the final refit, as identified by the existing `model_fit` column. Training/validation metrics include only eligible rows and use the eligible candidate-training mean as baseline.
 
 Generating test predictions is not the same as evaluating test performance. Member B saves training and validation metrics in:
 

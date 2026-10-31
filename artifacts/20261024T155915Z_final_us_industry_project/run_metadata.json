@@ -1,0 +1,111 @@
+{
+  "run_id": "20261024T155915Z_final_us_industry_project",
+  "config_path": "/home/xu-hy22/NUS/DSA5205/DSA5205Proj2_NUS/configs/final_us_industry_project.yaml",
+  "config_sha256": "7583590d344b197611191a1a56f2777bf8a3062c429f3ab1ae32fdbd6830c99d",
+  "model_table_sha256": "b651f4c73f31e813ae53ff1aabccdae9f089bd2b555ec27ef8b62e330fb94d0d",
+  "settings": {
+    "project": {
+      "name": "final_us_industry_project",
+      "random_seed": 5205
+    },
+    "paths": {
+      "raw_prices": "data/raw/prices_daily_us_industry.csv",
+      "monthly_prices": "data/processed/prices_monthly_us_industry.csv",
+      "model_table": "data/processed/model_table_us_industry.csv",
+      "artifacts_dir": "artifacts"
+    },
+    "data": {
+      "source": "yahoo_finance",
+      "client": "yahoo_chart",
+      "download": true,
+      "tickers": [
+        "XLY",
+        "XLP",
+        "XLE",
+        "XLF",
+        "XLV",
+        "XLI",
+        "XLK",
+        "XLB",
+        "XLU",
+        "IBB",
+        "IYR",
+        "ITB",
+        "KBE",
+        "KRE",
+        "XHB",
+        "XME",
+        "XOP",
+        "XRT",
+        "SMH",
+        "IYT"
+      ],
+      "benchmark_tickers": [
+        "SPY"
+      ],
+      "start": "2007-01-01",
+      "end": "2026-10-21",
+      "price_field": "adjusted_close",
+      "minimum_history_months": 24,
+      "minimum_assets_per_month": 18,
+      "minimum_ticker_coverage": 0.95
+    },
+    "features": {
+      "mapping": "trend_rank_relative_strength_long_risk",
+      "current_trend_days": 21,
+      "relative_strength_window_months": 6,
+      "risk_long_days": 126,
+      "winsorize_lower": 0.01,
+      "winsorize_upper": 0.99
+    },
+    "split": {
+      "train_end": "2014-12-31",
+      "validation_end": "2018-12-31",
+      "test_end": "2025-12-31"
+    },
+    "model": {
+      "type": "ridge",
+      "target_column": "target_return_1m",
+      "positive_coefficients": false,
+      "alpha_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0
+      ],
+      "selection_metric": "monthly_spearman_ic"
+    },
+    "strategy": {
+      "top_k": 5,
+      "require_positive_prediction": true,
+      "weighting": "equal",
+      "transaction_cost_bps": 10.0,
+      "cash_return_annual": 0.0
+    },
+    "evaluation": {
+      "annualization_factor": 12,
+      "benchmark_ticker": "SPY"
+    }
+  },
+  "environment": {
+    "python": "3.12.1",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "joblib": "1.6.0",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "PyYAML": "6.0.3",
+    "requests": "2.34.2",
+    "scikit-learn": "1.9.1",
+    "yfinance": "not-installed"
+  },
+  "summary": {
+    "stage": "model",
+    "model": {
+      "prediction_rows": 4440,
+      "selected_alpha": 0.1,
+      "test_rows": 1680
+    }
+  }
+}

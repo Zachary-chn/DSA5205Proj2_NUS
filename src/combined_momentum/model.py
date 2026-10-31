@@ -37,6 +37,22 @@ def monthly_spearman_ic(frame: pd.DataFrame, target_column: str) -> float:
     return float(np.mean(correlations)) if correlations else np.nan
 
 
+def _available_model_samples(table: pd.DataFrame, target_column: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Use only labels known by the first validation/test signal, after the close."""
+    signal_dates = pd.to_datetime(table["signal_date"])
+    return_dates = pd.to_datetime(table["return_date"])
+    labelled = table[target_column].notna()
+    train = table["split"].eq("train")
+    validation = table["split"].eq("validation")
+    validation_start = signal_dates.loc[validation].min()
+    test_start = signal_dates.loc[table["split"].eq("test")].min()
+    return (
+        table.loc[labelled & train & return_dates.le(validation_start)],
+        table.loc[labelled & validation & return_dates.le(test_start)],
+        table.loc[labelled & (train | validation) & return_dates.le(test_start)],
+    )
+
+
 def fit_and_predict(
     table: pd.DataFrame,
     config: ProjectConfig,
@@ -48,9 +64,7 @@ def fit_and_predict(
     positive_coefficients = bool(model_settings.get("positive_coefficients", False))
     if target_column not in table.columns:
         raise ValueError(f"Configured model target is missing from the model table: {target_column}")
-    labelled = table[target_column].notna()
-    train = table.loc[labelled & table["split"].eq("train")].copy()
-    validation = table.loc[labelled & table["split"].eq("validation")].copy()
+    train, validation, refit_data = _available_model_samples(table, target_column)
 
     alpha_rows: list[dict[str, float]] = []
     candidate_models: dict[float, Pipeline] = {}
@@ -75,7 +89,6 @@ def fit_and_predict(
         selected_alpha = float(alpha_results.sort_values("validation_mse").iloc[0]["alpha"])
 
     train_model = candidate_models[selected_alpha]
-    refit_data = table.loc[labelled & table["split"].isin(["train", "validation"])].copy()
     final_model = make_ridge(selected_alpha, positive=positive_coefficients)
     final_model.fit(refit_data[features], refit_data[target_column])
 
@@ -141,11 +154,16 @@ def prediction_metrics(
     target_column: str,
     split_names: tuple[str, ...] = ("train", "validation", "test"),
 ) -> pd.DataFrame:
+    train, validation, _ = _available_model_samples(predictions, target_column)
+    if not train.empty:
+        train_mean = float(train[target_column].mean())
+    early_samples = {"train": train, "validation": validation}
     rows = []
     for split_name in split_names:
         subset = predictions.loc[
             predictions["split"].eq(split_name) & predictions[target_column].notna()
         ].copy()
+        subset = early_samples.get(split_name, subset)
         error = subset["predicted_return"] - subset[target_column]
         model_sse = float(np.square(error).sum())
         baseline_sse = float(np.square(subset[target_column] - train_mean).sum())
