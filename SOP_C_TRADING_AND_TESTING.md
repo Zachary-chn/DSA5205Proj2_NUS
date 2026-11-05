@@ -43,27 +43,11 @@ src/combined_momentum/evaluation.py
 
 ## 第三步：计算换仓和成本
 
-```text
-weight_change(i,t)
-  = target_weight(i,t) - target_weight(i,t-1)
-
-one_way_turnover(t)
-  = sum_i abs(weight_change(i,t))
-
-transaction_cost(t)
-  = one_way_turnover(t) * 10 / 10000
-```
-
-目前单边交易成本设计成 10 个基点。扣费后的月收益是：
-
-```text
-strategy_return(t)
-  = sum_i[target_weight(i,t) * target_return_1m(i,t)]
-    + cash_weight(t) * monthly_cash_return
-    - transaction_cost(t)
-```
-
-目前现金年收益设计成 0。成交使用 A 生成的 `execution_date`，不能改成信号日同一个收盘价。
+现已采用漂移权重和自融资交易成本计算，替代旧的目标权重差近似。
+完整公式、成本定义及复现说明见
+[SOP 英文版第三步](SOP_C_TRADING_AND_TESTING_EN.md#step-3-calculate-turnover-and-transaction-costs)。
+每次交易先用上一持有期已实现收益计算交易前权重，再支付买卖金额的 10 bp
+成本；每只入选 ETF 仍占扣费后财富的 20%，未使用资金留在现金。
 
 ## 第四步：两个比较对象
 
@@ -104,3 +88,10 @@ figures/annual_performance.png
 确认每个月 ETF 权重加现金等于 1；单只 ETF 权重只可能是 0 或 0.2；入选数量不超过 5；交易成本不为负；三种组合使用相同测试月份；所有文件属于同一个 run ID。
 
 把 run ID、完整 artifact 路径和 `metrics.csv` 交给 D，并说明两条命令是否成功、是否修改过交易代码。你的工作到最终测试文件和图表结束。
+
+## C 阶段更新
+
+等权基准每月再平衡并扣除相同的 10 bp 单边成本；SPY 只扣初始买入成本。
+缺失或日期不匹配的基准收益会报错。最大回撤包括初始财富 1。
+B 的文件保持不变，C 另存阶段元数据。最终交接文档为
+[MEMBER_C_HANDOFF.md](extra_docs/MEMBER_C_HANDOFF.md)。

@@ -1,0 +1,130 @@
+{
+  "run_id": "20261024T155915Z_final_us_industry_project",
+  "recorded_at_utc": "2026-11-05T13:53:00.626083+00:00",
+  "config_path": "/Users/yang1/NUS Dropbox/Yanting Yang/School/DSA5205 Project 2/DSA5205Proj2_NUS/configs/final_us_industry_project.yaml",
+  "config_sha256": "7583590d344b197611191a1a56f2777bf8a3062c429f3ab1ae32fdbd6830c99d",
+  "model_table_sha256": "b651f4c73f31e813ae53ff1aabccdae9f089bd2b555ec27ef8b62e330fb94d0d",
+  "settings": {
+    "project": {
+      "name": "final_us_industry_project",
+      "random_seed": 5205
+    },
+    "paths": {
+      "raw_prices": "data/raw/prices_daily_us_industry.csv",
+      "monthly_prices": "data/processed/prices_monthly_us_industry.csv",
+      "model_table": "data/processed/model_table_us_industry.csv",
+      "artifacts_dir": "artifacts"
+    },
+    "data": {
+      "source": "yahoo_finance",
+      "client": "yahoo_chart",
+      "download": true,
+      "tickers": [
+        "XLY",
+        "XLP",
+        "XLE",
+        "XLF",
+        "XLV",
+        "XLI",
+        "XLK",
+        "XLB",
+        "XLU",
+        "IBB",
+        "IYR",
+        "ITB",
+        "KBE",
+        "KRE",
+        "XHB",
+        "XME",
+        "XOP",
+        "XRT",
+        "SMH",
+        "IYT"
+      ],
+      "benchmark_tickers": [
+        "SPY"
+      ],
+      "start": "2007-01-01",
+      "end": "2026-10-21",
+      "price_field": "adjusted_close",
+      "minimum_history_months": 24,
+      "minimum_assets_per_month": 18,
+      "minimum_ticker_coverage": 0.95
+    },
+    "features": {
+      "mapping": "trend_rank_relative_strength_long_risk",
+      "current_trend_days": 21,
+      "relative_strength_window_months": 6,
+      "risk_long_days": 126,
+      "winsorize_lower": 0.01,
+      "winsorize_upper": 0.99
+    },
+    "split": {
+      "train_end": "2014-12-31",
+      "validation_end": "2018-12-31",
+      "test_end": "2025-12-31"
+    },
+    "model": {
+      "type": "ridge",
+      "target_column": "target_return_1m",
+      "positive_coefficients": false,
+      "alpha_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0
+      ],
+      "selection_metric": "monthly_spearman_ic"
+    },
+    "strategy": {
+      "top_k": 5,
+      "require_positive_prediction": true,
+      "weighting": "equal",
+      "transaction_cost_bps": 10.0,
+      "cash_return_annual": 0.0
+    },
+    "evaluation": {
+      "annualization_factor": 12,
+      "benchmark_ticker": "SPY"
+    }
+  },
+  "environment": {
+    "python": "3.12.12",
+    "platform": "macOS-15.7.4-arm64-arm-64bit",
+    "joblib": "1.6.0",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "PyYAML": "6.0.3",
+    "requests": "2.34.2",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "pytest": "9.2.0",
+    "yfinance": "not-installed"
+  },
+  "summary": {
+    "stage": "evaluate",
+    "evaluation": {
+      "annualized_return": 0.20191871986080878,
+      "sharpe_ratio": 0.7705456876431416,
+      "max_drawdown": -0.43573641464033186
+    }
+  },
+  "input_sha256": {
+    "predictions.csv": "63b848ec150e71bc084fe3d5778febfcd4bc01a4a05dedf59d1ca38f265bddef",
+    "monthly_prices": "1509951cae2c4f926c79811d899d58b7d2821501c8a29e96e5f4d99558621328",
+    "member_b_metadata": "d1954faa3788dbbdc9d3122c65e26abb89ca8b9542ae428aa3c66b4631f4f7c1",
+    "portfolio_returns.csv": "5bc2dd2c7d2b9d16f991c8f43b3cbd3505feddf9997419b89ead85be326c20d1"
+  },
+  "implementation_sha256": {
+    "strategy.py": "aba4b122684664aeb582e3407a9129e116fe3007422314c583646ea6f4b3a887",
+    "backtest.py": "88328105332de1302e5200d8c92828c9c3764a4a71f9e41faf5ea0dbaacee991",
+    "evaluation.py": "28e41d193c087fdeddbaadc90f0e59fa5681936fe5f8271b15619c0610e125e8",
+    "pipeline.py": "11495950ca6ced9ca169a82e07749de67a557d59580d9d612da4882f88100ba6",
+    "model.py": "98e5ee16f99783ef51d3ee7114b72c102b3fc830ab8df96c82b99495e779762b",
+    "io.py": "f9849f45a6fee04e2d80f263d78951c0734bb69b1ff5d9deb8e2d22ba8ec9bb4",
+    "config.py": "c32268b29cced96eaf141ab72caddc894ceafe0dc91c3a69fb1cb90c279f64ac"
+  },
+  "accounting": "drifted weights; self-financing costs; net benchmarks; configured cash rate"
+}

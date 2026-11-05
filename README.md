@@ -2,16 +2,16 @@
 
 [中文版 README](README_CN.md)
 
-This repository is a hand-off framework for a four-person group project. It fixes the research question, feature formulas, model family, trading rule, file interfaces and run commands. It deliberately does **not** contain the final cleaned data, feature table, fitted model, validation choice, test results, coefficient interpretation or performance discussion. Those are the group's work.
+This repository is a hand-off framework for a four-person group project. It fixes the research question, feature formulas, model family, trading rule, file interfaces and run commands. A’s processed data and B’s fitted model and predictions are present. Member C’s accounting, testing and handoff are described in `extra_docs/MEMBER_C_HANDOFF.md`; Member D completes the report and video.
 
 ## 1. Current project state
 
 | Part | Current status | Who completes it |
 |---|---|---|
-| Final raw data | Downloaded but not validated or transformed | Member A |
-| Final cleaned data and three-feature model table | Empty / not generated | Member A |
-| Model training and validation | Empty / not run | Member B |
-| Trading implementation and final test | Empty / not run | Member C |
+| Final raw data | Present; processed by A | Member A |
+| Final cleaned data and three-feature model table | Present | Member A |
+| Model training and validation | Present; alpha 0.1 selected | Member B |
+| Trading implementation and final test | See Member C handoff and existing run outputs | Member C |
 | Final report and presentation | Empty | Member D |
 
 Before finalising this repository, we used a small convenience sample of ETFs to check that the formulas and workflow were sensible. That exploratory data is not part of the formal project dataset, training process or reported results.
@@ -55,7 +55,9 @@ The final candidates are 20 U.S.-listed equity sector and industry ETFs. Every c
 | Specialised industry | SMH | Semiconductors |
 | Specialised industry | IYT | Transportation |
 
-SPY is downloaded separately as the liquid buy-and-hold U.S. equity benchmark. It is not eligible for feature ranks, model estimation, or Top-5 selection. The sample begins in January 2007, after every candidate had launched. Membership is based on U.S. equity sector or industry exposure, launch date, data coverage, and availability of adjusted daily prices. Historical strategy performance is not part of the stated inclusion rule.
+SPY is downloaded separately as the liquid buy-and-hold U.S. equity benchmark. It is not eligible for feature ranks, model estimation, or Top-5 selection. The sample begins in January 2007 using available historical sector and industry investment series. These histories can include predecessor instruments: SMH represented Semiconductor HOLDRS Trust before the current semiconductor ETF began trading under that ticker on 21 December 2011. The current ETF itself did not exist before January 2007.
+
+The original selection description cited market exposure, launch date, data coverage, and adjusted-price availability, and stated that ETFs launched before January 2007. The SMH investigation subsequently clarified that the retained dataset includes predecessor history. This clarification does not establish that an explicit predecessor-aware rule was set before selection. The candidate list and historical series remain unchanged; historical strategy performance is not part of the stated inclusion rule. Checks of the saved SMH prices around 15–23 December 2011 found no obvious transition discontinuity, but Yahoo's complete adjustment methodology has not been independently verified.
 
 Full universe rules and sources are in [`extra_docs/FINAL_US_INDUSTRY_UNIVERSE.md`](extra_docs/FINAL_US_INDUSTRY_UNIVERSE.md). The project is currently designed to use the settings in [`configs/final_us_industry_project.yaml`](configs/final_us_industry_project.yaml).
 
@@ -148,13 +150,12 @@ Member B must save the validation score for every alpha. After selecting alpha, 
 
 At every signal date, score all 20 candidate ETFs. Retain ETFs with a positive predicted next-month return, rank them from highest to lowest, and select at most five. Give each selected ETF a 20% target weight. Any unused allocation remains in cash, so the portfolio is always long-only and unleveraged.
 
-Rebalance at the next available trading close. Let `w(i,t)` be the new target weight and `w(i,t-1)` the previous target weight:
-
-```text
-one_way_turnover(t) = sum_i |w(i,t) - w(i,t-1)|
-transaction_cost(t) = 0.001 * one_way_turnover(t)
-net_return(t) = gross_return(t) + cash_return(t) - transaction_cost(t)
-```
+Rebalance at the next available trading close. Member C uses drifted pretrade
+holdings, pays 10 bp on ETF purchases and sales, and funds costs from portfolio
+wealth. Each selected ETF remains a 20% target of wealth after costs; unused
+weight is cash. The equal-weight benchmark uses the same monthly accounting;
+SPY pays entry cost and is then held. Full formulas and limitations are in
+[SOP C](SOP_C_TRADING_AND_TESTING_EN.md).
 
 The required comparisons are the equal-weight candidate universe and buy-and-hold SPY. Report post-cost annualised return, annualised volatility, Sharpe ratio and maximum drawdown. Prediction RMSE, out-of-sample R-squared and monthly rank IC must also be reported even when weak or negative.
 
@@ -193,7 +194,7 @@ All tables are UTF-8 CSV files with a header row. Dates use `YYYY-MM-DD`; return
 | Portfolio outputs | `artifacts/<run_id>/positions.csv`, `trades.csv`, `portfolio_returns.csv` | selection flags, weights, weight changes, turnover, cost and net return |
 | Evaluation | `artifacts/<run_id>/metrics.csv`, `annual_performance.csv`, `figures/` | required metrics and out-of-sample plots |
 
-The final processed files and final artifact folder do not exist yet by design.
+Processed files and B’s artifact folder exist. C adds outputs to the same run without overwriting A or B files.
 
 ## 9. Data-stage checks
 
@@ -280,8 +281,20 @@ submission/
     Member D places the final report and video/submission material here
 ```
 
-## 12. What remains deliberately blank
+## 12. Member C results and remaining submission work
 
-The project currently makes no final statement about data quality, selected alpha, coefficient sizes or signs, prediction quality, chosen holdings, turnover, returns, Sharpe ratio, drawdown, benchmark performance, successful periods, failure periods or economic interpretation. These fields remain empty in the final-results worksheet until the group completes the pipeline.
+See [Member C handoff](extra_docs/MEMBER_C_HANDOFF.md) for methodology, frozen
+holdout results, checks, exact macOS/Linux reproduction commands, and output
+locations. B’s original model metadata remains in `run_metadata.json`; C records
+its stages in separate metadata files. Use only the explicit backtest/evaluate
+stages to reproduce C without retraining.
 
-The report and 15-25 minute video should follow the same order as this README: market and timing, data checks, feature formulas, Ridge and overfitting control, chronological validation, prediction-to-position rule, costs, final testing, interpretation and reproducibility. Every final number and plot must come from the same run ID.
+The submission run retains final tables, five figures, C's two stage metadata
+files and frozen requirements. The standalone C verifier and its historical
+review records are optional local files excluded from Git; they are not needed
+by the pipeline, pytest suite or Member D's handoff.
+
+Member D must complete the 15–25 page report, 15–25 minute video, and contribution
+statement using the same run ID. Weak results must be explained without tuning
+the final holdout. Annual tables include partial realisation years at the
+boundaries of the test signal period.

@@ -15,3 +15,9 @@ artifacts/*
 !artifacts/20261024T155915Z_final_us_industry_project/**
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+# Optional local Member C review bundle; not needed by pipeline or pytest.
+/scripts/verify_member_c.py
+/artifacts/20261024T155915Z_final_us_industry_project/member_c_original_input_sha256.json
+/artifacts/20261024T155915Z_final_us_industry_project/member_c_test_results.xml
+/artifacts/20261024T155915Z_final_us_industry_project/member_c_verification.json

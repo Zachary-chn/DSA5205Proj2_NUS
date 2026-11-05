@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime, timezone
+import json
 import platform
 import sys
 from typing import Any
@@ -12,7 +14,7 @@ import pandas as pd
 from .backtest import run_backtest
 from .config import ProjectConfig, ensure_project_directories
 from .data import prepare_data
-from .evaluation import evaluate_portfolio
+from .evaluation import evaluate_portfolio, evaluate_prediction_years
 from .features import build_model_table
 from .io import file_sha256, make_run_id, read_table, write_json, write_table
 from .model import fit_and_predict, plot_test_predictions, prediction_metrics
@@ -48,7 +50,7 @@ def _record_run(config: ProjectConfig, run_dir: Path) -> None:
 
 
 def _environment_versions() -> dict[str, str]:
-    packages = ["joblib", "matplotlib", "numpy", "pandas", "PyYAML", "requests", "scikit-learn", "yfinance"]
+    packages = ["joblib", "matplotlib", "numpy", "pandas", "PyYAML", "requests", "scikit-learn", "scipy", "pytest", "yfinance"]
     result = {"python": sys.version.split()[0], "platform": platform.platform()}
     for package in packages:
         try:
@@ -123,7 +125,8 @@ def _run_evaluate(config: ProjectConfig, run_dir: Path) -> dict[str, Any]:
     target_column = str(config.section("model").get("target_column", "target_return_1m"))
     train_mean = float(
         predictions.loc[
-            predictions["split"].eq("train") & predictions[target_column].notna(),
+            predictions["split"].eq("train") & predictions[target_column].notna()
+            & predictions["return_date"].le(predictions.loc[predictions["split"].eq("validation"), "signal_date"].min()),
             target_column,
         ].mean()
     )
@@ -134,6 +137,8 @@ def _run_evaluate(config: ProjectConfig, run_dir: Path) -> dict[str, Any]:
         target_column,
         run_dir / "figures" / "test_prediction_scatter.png",
     )
+    prediction_years = evaluate_prediction_years(predictions, train_mean, target_column, run_dir / "figures")
+    write_table(prediction_years, run_dir / "annual_prediction_metrics.csv")
     annualization = int(config.section("evaluation")["annualization_factor"])
     metrics, curves, annual = evaluate_portfolio(portfolio, annualization, run_dir / "figures")
     write_table(metrics, run_dir / "metrics.csv")
@@ -159,6 +164,30 @@ def run_pipeline(
     summary: dict[str, Any] = {"stage": stage}
     run_dir: Path | None = None
 
+    if stage in {"backtest", "evaluate"}:
+        run_dir = _resolve_run_dir(config, run_id, create=False)
+        metadata_path = run_dir / "run_metadata.json"
+        original = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if original["config_sha256"] != file_sha256(config.config_path):
+            raise ValueError("Configuration differs from Member B's recorded run")
+        if original["model_table_sha256"] != file_sha256(config.path("model_table")):
+            raise ValueError("Model table differs from Member B's recorded run")
+        if stage == "evaluate":
+            backtest_record = json.loads(
+                (run_dir / "member_c_backtest_metadata.json").read_text(encoding="utf-8")
+            )
+            for name, path in {
+                "predictions.csv": run_dir / "predictions.csv",
+                "monthly_prices": config.path("monthly_prices"),
+                "member_b_metadata": metadata_path,
+                "portfolio_returns.csv": run_dir / "portfolio_returns.csv",
+            }.items():
+                if backtest_record["input_sha256"][name] != file_sha256(path):
+                    raise ValueError(f"Backtest input/output changed before evaluation: {name}")
+            for name, digest in backtest_record["implementation_sha256"].items():
+                if file_sha256(Path(__file__).parent / name) != digest:
+                    raise ValueError(f"Implementation changed after backtest: {name}")
+
     if stage in {"all", "data"}:
         summary["data"] = _run_data(config, force_download)
     if stage in {"all", "features"}:
@@ -181,6 +210,7 @@ def run_pipeline(
     if run_dir is not None:
         metadata = {
             "run_id": run_dir.name,
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
             "config_path": str(config.config_path),
             "config_sha256": file_sha256(config.config_path),
             "model_table_sha256": file_sha256(config.path("model_table")),
@@ -188,6 +218,20 @@ def run_pipeline(
             "environment": _environment_versions(),
             "summary": summary,
         }
-        write_json(metadata, run_dir / "run_metadata.json")
+        if stage in {"backtest", "evaluate"}:
+            metadata["input_sha256"] = {
+                "predictions.csv": file_sha256(run_dir / "predictions.csv"),
+                "monthly_prices": file_sha256(config.path("monthly_prices")),
+                "member_b_metadata": file_sha256(run_dir / "run_metadata.json"),
+                "portfolio_returns.csv": file_sha256(run_dir / "portfolio_returns.csv"),
+            }
+            metadata["implementation_sha256"] = {
+                name: file_sha256(Path(__file__).parent / name)
+                for name in ("strategy.py", "backtest.py", "evaluation.py", "pipeline.py", "model.py", "io.py", "config.py")
+            }
+            metadata["accounting"] = "drifted weights; self-financing costs; net benchmarks; configured cash rate"
+            write_json(metadata, run_dir / f"member_c_{stage}_metadata.json")
+        else:
+            write_json(metadata, run_dir / "run_metadata.json")
     return run_dir, summary
 
