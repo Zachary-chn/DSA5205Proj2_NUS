@@ -135,6 +135,8 @@ $$
 
 The penalty discourages large coefficients and stabilises the model when signals share information. Each feature is standardised using the mean and standard deviation estimated from the relevant fitting sample. Standardised coefficients can therefore be compared by magnitude within the final model.
 
+The implementation uses the scikit-learn Ridge estimator with automatic solver selection. For the dense and unconstrained feature matrix used in this experiment, the fitted estimator selected the Cholesky solver. Training therefore solves the regularised least-squares system by Cholesky factorisation rather than by iterative gradient descent.
+
 ## Chronological sample design
 
 The sample is divided by signal date. Training observations extend through December 2014, validation observations run from January 2015 through December 2018, and final test signals run from January 2019 through December 2025.
@@ -177,7 +179,7 @@ The fitted relation combines medium-term continuation with short-term reversal. 
 
 ## Computational environment
 
-The project uses Python 3.12 for the recorded model and evaluation runs. The main packages are pandas, NumPy, scikit-learn, SciPy, matplotlib, PyYAML, joblib, and requests. The random seed is fixed at 5205. Model settings, sample dates, feature windows, trading rules, and benchmark choices are stored in a single project configuration so the same analysis can be reproduced across environments.
+The recorded model run uses Python 3.12.1, scikit-learn 1.9.1, NumPy 2.5.4, and pandas 3.1.0. The remaining environment is recorded with the run artifacts, and the random seed is fixed at 5205. Model settings, sample dates, feature windows, trading rules, and benchmark choices are stored in a single project configuration so the same analysis can be reproduced across environments.
 
 # Portfolio Construction and Evaluation Design
 
@@ -242,7 +244,7 @@ The Top-5 strategy produces the highest annualised and cumulative return over th
 | Investment after costs | Annualised return | Annualised volatility | Sharpe | Maximum drawdown | Cumulative return |
 |---|---:|---:|---:|---:|---:|
 | Three-signal Top-5 | 20.19% | 29.95% | 0.771 | -43.57% | 262.35% |
-| Equal-weight universe | 14.76% | 20.70% | 0.775 | -33.89% | 162.14% |
+| Equal-weight universe | 14.76% | 20.69% | 0.775 | -33.89% | 162.14% |
 | Buy-and-hold SPY | 16.20% | 17.26% | 0.962 | -23.79% | 186.04% |
 
 One unit invested in the strategy grows to 3.6235, compared with 2.6214 for the equal-weight universe and 2.8604 for SPY. Figure 3 shows that the paths remain relatively close through the early part of the test and separate more clearly after 2022. The strategy finishes with the highest wealth, while its path exhibits larger month-to-month changes.
@@ -312,7 +314,7 @@ These considerations limit how far the historical return advantage can be genera
 
 We tested a monthly rotation strategy across 20 U.S. sector and industry ETFs using one-month trend rank, six-month relative-strength rank, and six-month realised volatility. Ridge regression combined the signals into next-month return forecasts, and a positive-prediction Top-5 rule converted those forecasts into a long-only portfolio. Chronological training, validation, and test periods separated model selection from final evaluation, while next-close execution and transaction costs connected the prediction exercise to an investable strategy.
 
-The strategy achieved the highest annualised and cumulative return in the test period. Its 20.19% annualised return exceeded both the equal-weight ETF universe and SPY. This outcome came with higher volatility, a maximum drawdown of 43.57%, and a Sharpe ratio below SPY. Prediction metrics were positive but small in the test and negative in validation, indicating weak and unstable average forecasting ability.
+The strategy achieved the highest annualised and cumulative return in the test period. Its 20.19% annualised return exceeded both the equal-weight ETF universe and SPY. This outcome came with higher volatility, a maximum drawdown of 43.57%, and a Sharpe ratio below SPY. Test R-squared and rank IC were both positive but small. Validation R-squared was also marginally positive, while validation rank IC was negative. The model therefore produced little improvement in return-level accuracy and no stable ability to rank ETFs across periods.
 
 The results are consistent with a portfolio that benefits from concentrated exposure to higher-risk industries during favourable periods. The method provides a clear and reproducible framework for industry allocation, and the experiment shows how interpretable signals can be carried from data construction through model fitting and portfolio accounting. The current evidence supports practical feasibility while leaving substantial room for improved risk control and adaptation to changing market conditions.
 
@@ -355,8 +357,14 @@ The recorded analysis uses run ID `20261024T155915Z_final_us_industry_project`. 
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python scripts\run_pipeline.py --config configs\final_us_industry_project.yaml --stage backtest --run-id 20261024T155915Z_final_us_industry_project
-python scripts\run_pipeline.py --config configs\final_us_industry_project.yaml --stage evaluate --run-id 20261024T155915Z_final_us_industry_project
+python scripts\run_pipeline.py `
+  --config configs\final_us_industry_project.yaml `
+  --stage backtest `
+  --run-id 20261024T155915Z_final_us_industry_project
+python scripts\run_pipeline.py `
+  --config configs\final_us_industry_project.yaml `
+  --stage evaluate `
+  --run-id 20261024T155915Z_final_us_industry_project
 ```
 
 The backtest produces positions, trades, monthly portfolio returns, benchmark returns, transaction costs, performance tables, and figures. The evaluation uses the same saved predictions and run identifier throughout.

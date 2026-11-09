@@ -157,7 +157,7 @@ also confirms configuration and model-table hashes match B's record.
 | Investment (after costs) | CAGR | Annualized volatility | Sharpe | Maximum drawdown |
 |---|---:|---:|---:|---:|
 | Three-signal Top-5 strategy | 20.19% | 29.95% | 0.771 | -43.57% |
-| Monthly equal-weight universe | 14.76% | 20.70% | 0.775 | -33.89% |
+| Monthly equal-weight universe | 14.76% | 20.69% | 0.775 | -33.89% |
 | Buy-and-hold SPY | 16.20% | 17.26% | 0.962 | -23.79% |
 
 The strategy's terminal wealth is **3.6235 per initial unit** (262.35% cumulative
